@@ -25,6 +25,7 @@ class ToDo(db.Model):
 
     def return_json(self) -> json:
         return {
+            "unique_key": self.unique_key,
             "todo": self.todo,
             "author": self.author,
             "event_date": self.event_date.strftime("%m/%d/%Y, %H:%M:%S"),
@@ -41,47 +42,85 @@ def index():
 
 @app.route('/post', methods=['POST'])
 def post():
-    body = request.get_json()
-    unique_key = ''.join(random.choices(
-        string.ascii_uppercase + string.digits, k=16))
-    todo = ToDo(unique_key=unique_key,
-                todo=body['todo'], author=body['author'])
-    db.session.add(todo)
-    db.session.commit()
-    return "ToDo created successfully"
+    try:
+        body = request.get_json()
+        unique_key = ''.join(random.choices(
+            string.ascii_uppercase + string.digits, k=16))
+        todo = ToDo(unique_key=unique_key,
+                    todo=body['todo'], author=body['author'])
+        db.session.add(todo)
+        db.session.commit()
+        return jsonify({
+            "message": "ToDo added succesfully",
+            "error": "None"
+        })
+    except Exception as error:
+        return jsonify({
+            "message": "ToDo not added succesfully",
+            "error": repr(error)
+        })
 
 
 @app.route('/get', methods=['GET'])
 def get():
-    body = request.get_json()
-    this_todo = ToDo.query.filter_by(unique_key=body['unique_key']).first()
-    return this_todo.todo
+    try:
+        body = request.get_json()
+        this_todo = ToDo.query.filter_by(unique_key=body['unique_key']).first()
+        return this_todo.return_json()
+    except:
+        allTodos = {}
+        for i in range(len(ToDo.query.all())):
+            allTodos[i] = ToDo.query.all()[i].return_json()
+        return allTodos
 
 
 @app.route('/patch', methods=['PATCH'])
 def update():
-    body = request.get_json()
-    this_todo = ToDo.query.filter_by(unique_key=body['unique_key']).first()
-    if this_todo:
-        db.session.delete(this_todo)
-        db.session.commit()
-        updated_todo = ToDo(unique_key=body['unique_key'],
-                            todo=body['todo'] if 'todo' in body else this_todo.todo,
-                            author=body['author'] if 'author' in body else this_todo.author,
-                            event_date=body['event_date'] if 'event_date' in body else this_todo.event_date)
-        db.session.add(updated_todo)
-        db.session.commit()
-    return "ToDo patched successfully"
-
+    try:
+        body = request.get_json()
+        this_todo = ToDo.query.filter_by(unique_key=body['unique_key']).first()
+        if this_todo:
+            db.session.delete(this_todo)
+            db.session.commit()
+            updated_todo = ToDo(unique_key=body['unique_key'],
+                                todo=body['todo'] if 'todo' in body else this_todo.todo,
+                                author=body['author'] if 'author' in body else this_todo.author,
+                                event_date=body['event_date'] if 'event_date' in body else this_todo.event_date)
+            db.session.add(updated_todo)
+            db.session.commit()
+            return jsonify({
+                "message": "ToDo patched succesfully",
+                "error": "None"
+            })
+        else:
+            return jsonify({
+                "message": "ToDo not patched succesfully",
+                "error": "No todo found for this unique key"
+            })
+    except Exception as error:
+        return jsonify({
+            "message": "ToDo not patched succesfully",
+            "error": repr(error)
+        })
 
 @app.route('/delete', methods=['Delete'])
 def delete():
-    body = request.get_json()
-    this_todo = ToDo.query.get(body['unique_key'])
-    db.session.delete(this_todo)
-    db.session.commit()
-    return "ToDo delete successfully"
+    try: 
+        body = request.get_json()
+        this_todo = ToDo.query.get(body['unique_key'])
+        db.session.delete(this_todo)
+        db.session.commit()
+        return jsonify({
+            "message": "ToDo deleted succesfully",
+            "error": "None"
+        })
+    except Exception as error:
+        return jsonify({
+            "message": "ToDo not deleted succesfully",
+            "error": repr(error)
+        })
+        
 
 
 if __name__ == '__main__':
-    app.run(debug=False)
+    app.run(debug=True, port=3000)
