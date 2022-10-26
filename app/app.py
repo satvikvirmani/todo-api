@@ -52,13 +52,13 @@ def post():
         db.session.commit()
         return jsonify({
             "message": "ToDo added succesfully",
-            "error": "None"
+            "error": "None",
+            "unique_key": unique_key
         })
     except Exception as error:
         return jsonify({
             "message": "ToDo not added succesfully",
-            "error": repr(error),
-            "unique_key": unique_key
+            "error": repr(error)
         })
 
 
