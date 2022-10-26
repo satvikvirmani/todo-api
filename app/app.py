@@ -57,7 +57,8 @@ def post():
     except Exception as error:
         return jsonify({
             "message": "ToDo not added succesfully",
-            "error": repr(error)
+            "error": repr(error),
+            "unique_key": unique_key
         })
 
 
